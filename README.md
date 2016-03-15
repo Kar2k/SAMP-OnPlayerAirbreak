@@ -3,6 +3,8 @@ OnPlayerAirbreak
 
 Simple airbreak detection script for SA-MP. Just include it in your mode and you're ready to go!
 
+Maintained by Kar.
+
 Callback
 ===================
 There is only one callback included which is called when airbreak is detected.
