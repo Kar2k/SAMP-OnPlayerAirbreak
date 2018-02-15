@@ -13,9 +13,12 @@
 
 #if defined ac_OnPlayerAirbreak
 	#endinput
-#else
-	#define ac_OnPlayerAirbreak
 #endif
+
+#define ac_OnPlayerAirbreak
+
+
+#if !defined FILTERSCRIPT
 
 // How many times should airbreak be detected before OnPlayerAirbreak is finally called?
 #if !defined MAX_FLAGGED_DETECTIONS
@@ -76,24 +79,6 @@ static AB_OnAirbreakDetected(playerid)
 		CallLocalFunction("OnPlayerAirbreak", "i", playerid);
 	}
 	s_AirbreakLastDetection[playerid] = timestamp;
-}
-
-public OnFilterScriptInit()
-{
-	for(new i = 0, j = GetPlayerPoolSize(); i <= j; i ++)
-	{
-		if(IsPlayerConnected(i) && GetPlayerState(i) == PLAYER_STATE_ONFOOT)
-		{
-			s_AirbreakDetectImmunity[i] = gettime() + 3;
-			s_AirbreakUpdateTick[i] = gettime();
-		}
-	}
-
-	#if defined AB_OnFilterScriptInit
-		return AB_OnFilterScriptInit();
-	#else
-		return 1;
-	#endif
 }
 
 public OnPlayerConnect(playerid)
@@ -193,7 +178,8 @@ public OnPlayerUpdate(playerid)
 	#endif
 }
 
-stock AB_SetSpawnInfo(playerid, team, skin, Float:x, Float:y, Float:z, Float:rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo)
+forward AB_SetSpawnInfo(playerid, team, skin, Float:x, Float:y, Float:z, Float:rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo);
+public AB_SetSpawnInfo(playerid, team, skin, Float:x, Float:y, Float:z, Float:rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo)
 {
 	new
 		ret = SetSpawnInfo(playerid, team, skin, x, y, z, rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo);
@@ -216,7 +202,8 @@ stock AB_SetSpawnInfo(playerid, team, skin, Float:x, Float:y, Float:z, Float:rot
 	return ret;
 }
 
-stock AB_SetPlayerPos(playerid, Float:x, Float:y, Float:z)
+forward AB_SetPlayerPos(playerid, Float:x, Float:y, Float:z);
+public AB_SetPlayerPos(playerid, Float:x, Float:y, Float:z)
 {
 	new
 		ret = SetPlayerPos(playerid, x, y, z);
@@ -233,7 +220,8 @@ stock AB_SetPlayerPos(playerid, Float:x, Float:y, Float:z)
 	return ret;
 }
 
-stock AB_SetPlayerPosFindZ(playerid, Float:x, Float:y, Float:z)
+forward AB_SetPlayerPosFindZ(playerid, Float:x, Float:y, Float:z);
+public AB_SetPlayerPosFindZ(playerid, Float:x, Float:y, Float:z)
 {
 	new
 		ret = SetPlayerPosFindZ(playerid, x, y, z);
@@ -250,7 +238,8 @@ stock AB_SetPlayerPosFindZ(playerid, Float:x, Float:y, Float:z)
 	return ret;
 }
 
-stock AB_PutPlayerInVehicle(playerid, vehicleid, seatid)
+forward AB_PutPlayerInVehicle(playerid, vehicleid, seatid);
+public AB_PutPlayerInVehicle(playerid, vehicleid, seatid)
 {
 	new
 		ret = PutPlayerInVehicle(playerid, vehicleid, seatid);
@@ -263,10 +252,12 @@ stock AB_PutPlayerInVehicle(playerid, vehicleid, seatid)
 	return ret;
 }
 
-stock AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
+forward AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z);
+public AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 {
 	for(new i = 0, j = GetPlayerPoolSize(); i <= j; i ++)
 	{
+		if(!IsPlayerConnected(playerid)) continue;
 		if(GetPlayerState(i) == PLAYER_STATE_DRIVER && IsPlayerInVehicle(i, vehicleid))
 		{
 			s_AirbreakDetectImmunity[i] = gettime() + 3;
@@ -305,12 +296,6 @@ stock AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 	#define _ALS_OnPlayerUpdate
 #endif
 
-#if defined _ALS_OnFilterScriptInit
-	#undef OnFilterScriptInit
-#else
-	#define _ALS_OnFilterScriptInit
-#endif
-
 #if defined _ALS_SetSpawnInfo
 	#undef SetSpawnInfo
 #else
@@ -345,17 +330,12 @@ stock AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 #define OnPlayerSpawn 		AB_OnPlayerSpawn
 #define OnPlayerDeath 		AB_OnPlayerDeath
 #define OnPlayerUpdate 		AB_OnPlayerUpdate
-#define OnFilterScriptInit  AB_OnFilterScriptInit
 
 #define SetSpawnInfo        AB_SetSpawnInfo
 #define SetPlayerPos        AB_SetPlayerPos
 #define SetPlayerPosFindZ   AB_SetPlayerPosFindZ
 #define PutPlayerInVehicle  AB_PutPlayerInVehicle
 #define SetVehiclePos       AB_SetVehiclePos
-
-#if defined AB_OnFilterScriptInit
-	forward AB_OnFilterScriptInit();
-#endif
 
 #if defined AB_OnPlayerConnect
 	forward AB_OnPlayerConnect(playerid);
@@ -371,4 +351,60 @@ stock AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 
 #if defined AB_OnPlayerDeath
 	forward AB_OnPlayerDeath(playerid, killerid, reason);
+#endif
+
+
+#else //if it's a FS
+
+stock AB_FPutPlayerInVehicle(playerid, vehicleid, seatid)
+	return CallRemoteFunction("AB_PutPlayerInVehicle", "iii", playerid, vehicleid, seatid);
+
+stock AB_FSetPlayerPosFindZ(playerid, Float:x, Float:y, Float:z)
+	return CallRemoteFunction("AB_SetPlayerPosFindZ", "ifff", playerid, x, y, z);
+
+stock AB_FSetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
+	return CallRemoteFunction("AB_SetVehiclePos", "ifff", vehicleid x, y, z);
+
+stock AB_FSetPlayerPos(playerid, Float:x, Float:y, Float:z)
+	return CallRemoteFunction("AB_SetPlayerPos", "ifff", playerid, x, y, z);
+
+stock AB_FSetSpawnInfo(playerid, team, skin, Float:x, Float:y, Float:z, Float:rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo)
+	return CallRemoteFunction("AB_SetSpawnInfo", "iiiffffiiiiii", playerid, team, skin, Float:x, Float:y, Float:z, Float:rotation, weapon1, weapon1_ammo, weapon2, weapon2_ammo, weapon3, weapon3_ammo);
+
+#if defined _ALS_SetSpawnInfo
+	#undef SetSpawnInfo
+#else
+	#define _ALS_SetSpawnInfo
+#endif
+
+#if defined _ALS_SetPlayerPos
+	#undef SetPlayerPos
+#else
+	#define _ALS_SetPlayerPos
+#endif
+
+#if defined _ALS_SetVehiclePos
+	#undef SetVehiclePos
+#else
+	#define _ALS_SetVehiclePos
+#endif
+
+#if defined _ALS_SetPlayerPosFindZ
+	#undef SetPlayerPosFindZ
+#else
+	#define _ALS_SetPlayerPosFindZ
+#endif
+
+#if defined _ALS_PutPlayerInVehicle
+	#undef PutPlayerInVehicle
+#else
+	#define _ALS_PutPlayerInVehicle
+#endif
+
+#define SetSpawnInfo        AB_FSetSpawnInfo
+#define SetPlayerPos        AB_FSetPlayerPos
+#define SetPlayerPosFindZ   AB_FSetPlayerPosFindZ
+#define PutPlayerInVehicle  AB_FPutPlayerInVehicle
+#define SetVehiclePos       AB_FSetVehiclePos
+
 #endif
