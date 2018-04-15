@@ -267,7 +267,7 @@ stock AB_SetVehiclePos(vehicleid, Float:x, Float:y, Float:z)
 {
 	for(new i = 0, j = GetPlayerPoolSize(); i <= j; i ++)
 	{
-		if(GetPlayerState(i) == PLAYER_STATE_DRIVER && IsPlayerInVehicle(i, vehicleid))
+		if(IsPlayerInVehicle(i, vehicleid))
 		{
 			s_AirbreakDetectImmunity[i] = gettime() + 3;
 
